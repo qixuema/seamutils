@@ -72,6 +72,7 @@ def sort_and_deduplicate_chains(chains: Chains) -> Chains:
             chain = list(dict.fromkeys(chain)) # 去除重复点
             
             if degrees[chain[0]] > 2:
+                # 说明该 loop 和其他 chain 是相连的，因此其起点和终点是固定的
                 chain.append(chain[0])
                 return chain
             
