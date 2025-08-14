@@ -272,3 +272,14 @@ def extract_seams_by_faces(faces):
                 if len(uvset) > 1]                        # 多种 UV 组合 ⇒ seam
 
     return seam_edges
+
+def flatten_and_add_marker(chains: Chains) -> List[int]:
+    result = []
+    
+    for chain in chains:
+        start, end = chain[0], chain[-1]
+        new_seq = [start] + [end] + chain[1:-1] + [-1]
+        
+        result.extend(new_seq)
+    
+    return result
