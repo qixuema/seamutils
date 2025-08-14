@@ -5,6 +5,19 @@ from collections import Counter
 Chains = List[List[int]]
 
 
+def compute_chains_endpoint_degrees(chains: Chains) -> dict[int, int]:
+    """
+    compute the degree of each endpoint in the chains
+    """
+    deg_counter = Counter()
+    for chain in chains:
+        if not chain:
+            continue
+        start, end = chain[0], chain[-1]
+        deg_counter[start] += 1
+        deg_counter[end] += 1
+    return dict(deg_counter)
+
 def sort_chains(chains: Chains) -> Chains:
     def sort_chain(chain: List[int]) -> List[int]:
         # sort the chain by the first and last point
@@ -57,11 +70,18 @@ def sort_and_deduplicate_chains(chains: Chains) -> Chains:
         elif chain[0] == chain[-1]:
             chain = chain[:-1]
             chain = list(dict.fromkeys(chain)) # 去除重复点
+            
+            if degrees[chain[0]] > 2:
+                chain.append(chain[0])
+                return chain
+            
             min_value = min(chain)
             min_index = chain.index(min_value)
             chain = chain[min_index:] + chain[:min_index]
             chain.append(chain[0])
         return chain
+
+    degrees = compute_chains_endpoint_degrees(chains)
 
     seen = set()
     unique_chains = []
