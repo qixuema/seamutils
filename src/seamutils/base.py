@@ -233,3 +233,21 @@ def filter_chains(chains: Chains) -> Chains:
         filtered_chains.append(chain)
     
     return filtered_chains
+
+
+def extract_seams_by_faces(faces):
+    edge_uv_pairs = defaultdict(set)
+    
+    for face in faces:
+        # face: [v0, v1, v2, vt0, vt1, vt2]
+        for i in range(3):
+            v_i, vt_i = face[i], face[i+3]
+            v_j, vt_j = face[(i + 1) % 3], face[(i + 1) % 3 + 3]
+            edge_key = frozenset({v_i, v_j})                 # 无向几何边
+            uv_pair   = frozenset({vt_i, vt_j})              # 无向 UV 边
+            edge_uv_pairs[edge_key].add(uv_pair)
+
+    seam_edges = [tuple(edge) for edge, uvset in edge_uv_pairs.items()
+                if len(uvset) > 1]                        # 多种 UV 组合 ⇒ seam
+
+    return seam_edges
