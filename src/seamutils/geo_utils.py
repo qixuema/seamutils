@@ -1,6 +1,5 @@
 import numpy as np
-from src.utils.base import split_graph_into_chains, split_and_filter_chains_1D
-from src.utils.np_utils import caculate_align_mat
+from qixuema.np_utils import deduplicate_lines, deduplicate_faces
 
 def create_polygon_pillar_from_line(line, n_sides=6, radius=0.1):
     """
@@ -150,7 +149,6 @@ def remove_duplicate_vertices_and_lines(mesh:dict, return_indices=False, toleran
     
     return mesh
 
-
 def remove_duplicate_vertices_and_lines_for_seam(mesh:dict, tolerance=0.0001):
     # 注意，在这部分的代码中，我们并没有对顶点的顺序进行排序，我们只是剔除了重复（三维空间接近）的顶点,
     vertices = mesh['vertices']
@@ -171,29 +169,18 @@ def remove_duplicate_vertices_and_lines_for_seam(mesh:dict, tolerance=0.0001):
 
         updated_lines = inverse_indices[lines] # 更新线段索引，但是线段的顺序还是不变
 
-        updated_lines = np.sort(updated_lines, axis=1) # 需要注意一下，这里对线段内的方向进行了更新
-        
-        unique_lines, indices = np.unique(updated_lines, axis=0, return_index=True) # 这里 unique 之后，lines 的顺序会被打乱
-        
-        sorted_indices = np.argsort(indices)
-        unique_lines = unique_lines[sorted_indices] # 因此这里对 line 的顺序进行了重新排序，恢复原有的顺序，这是有必要的
+        unique_lines = deduplicate_lines(updated_lines)
 
         valid_lines = clean_invalid_lines(unique_lines)
         
         mesh['lines'] = valid_lines
 
-
     # If faces are provided, update the faces' indices
     if 'faces' in mesh and mesh['faces'] is not None:
         faces = mesh['faces']
         updated_faces = inverse_indices[faces] # update the vtx idx in faces
-        
-        # Sort faces for uniqueness, similar to lines
-        # updated_faces = np.sort(updated_faces, axis=1) # we don't need to sort faces, which will change the normal of the mesh
-        
-        unique_faces, face_indices = np.unique(updated_faces, axis=0, return_index=True)
-        sorted_face_indices = np.argsort(face_indices)
-        unique_faces = unique_faces[sorted_face_indices]
+                
+        unique_faces = deduplicate_faces(updated_faces)
         
         unique_faces = clean_invalid_faces(unique_faces)
         
