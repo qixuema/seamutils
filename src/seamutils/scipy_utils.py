@@ -30,7 +30,8 @@ def build_vertex_adjacency_csr(faces: np.ndarray, n_vertices: int | None = None)
 def one_ring_neighbors_csr(vertices: np.ndarray,
                            faces: np.ndarray,
                            query_idx,
-                           return_coords: bool = True):
+                           return_union: bool = False,
+                           return_coords: bool = False):
     """
     批量返回 query_idx 的 1-ring 邻域。
     Returns:
@@ -45,18 +46,21 @@ def one_ring_neighbors_csr(vertices: np.ndarray,
     # 单点邻居：直接查稀疏行的列索引
     neigh_dict = {int(i): A[int(i)].indices for i in q}
 
-    # 多点并集：用布尔掩码一次性取多行并集
-    mask = np.zeros(Vn, dtype=bool); mask[q] = True
-    # 选出这些行相加，>0 的列即为邻居并集
-    union_mask = (A[mask].sum(axis=0) > 0).A1
-    # 去掉查询点自身
-    union_mask[q] = False
-    union_ids = np.flatnonzero(union_mask)
+    if return_union:
+        # 多点并集：用布尔掩码一次性取多行并集
+        mask = np.zeros(Vn, dtype=bool); mask[q] = True
+        # 选出这些行相加，>0 的列即为邻居并集
+        union_mask = (A[mask].sum(axis=0) > 0).A1
+        # 去掉查询点自身
+        union_mask[q] = False
+        union_ids = np.flatnonzero(union_mask)
+        
+        return neigh_dict, union_ids
 
     if return_coords:
-        return neigh_dict, union_ids, vertices[union_ids]
-    else:
-        return neigh_dict, union_ids
+        return neigh_dict, vertices[union_ids]
+
+    return neigh_dict
 
 # -------- 可选：k-ring（2环/3环…）批量查询 --------
 def k_ring_csr(A: csr_matrix, seeds, k: int, include_seeds: bool = False) -> np.ndarray:

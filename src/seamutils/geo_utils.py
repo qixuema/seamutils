@@ -1,5 +1,4 @@
 import numpy as np
-from qixuema.np_utils import deduplicate_lines, deduplicate_faces
 
 def create_polygon_pillar_from_line(line, n_sides=6, radius=0.1):
     """
@@ -148,63 +147,6 @@ def remove_duplicate_vertices_and_lines(mesh:dict, return_indices=False, toleran
     #     return mesh, indices, sorted_indices
     
     return mesh
-
-def remove_duplicate_vertices_and_lines_for_seam(mesh:dict, tolerance=0.0001):
-    # 注意，在这部分的代码中，我们并没有对顶点的顺序进行排序，我们只是剔除了重复（三维空间接近）的顶点,
-    vertices = mesh['vertices']
-
-    if not np.all(np.mod(vertices, 1) == 0):
-        adjusted_points = np.round(vertices / tolerance) * tolerance
-    else:
-        adjusted_points = vertices
-    
-    # 移除重复的点并创建索引映射    
-    unique_points, inverse_indices = np.unique(adjusted_points, axis=0, return_inverse=True)
-
-    mesh['vertices'] = unique_points
-
-    # if lines are provided, update the lines' indices
-    if 'lines' in mesh and mesh['lines'] is not None:
-        lines = mesh['lines']
-
-        updated_lines = inverse_indices[lines] # 更新线段索引，但是线段的顺序还是不变
-
-        unique_lines = deduplicate_lines(updated_lines)
-
-        valid_lines = clean_invalid_lines(unique_lines)
-        
-        mesh['lines'] = valid_lines
-
-    # If faces are provided, update the faces' indices
-    if 'faces' in mesh and mesh['faces'] is not None:
-        faces = mesh['faces']
-        updated_faces = inverse_indices[faces] # update the vtx idx in faces
-                
-        unique_faces = deduplicate_faces(updated_faces)
-        
-        unique_faces = clean_invalid_faces(unique_faces)
-        
-        # Update faces in the lineset
-        mesh['faces'] = unique_faces
-    
-    if 'chains_1D' in mesh and mesh['chains_1D'] is not None:
-        
-        chains_1D = mesh['chains_1D']
-        
-        updated_chains_1D = np.where(chains_1D == -1, -1, inverse_indices[chains_1D]) # update the chains_1D indices
-
-        mesh['chains_1D'] = updated_chains_1D
-    
-    return mesh
-
-def clean_invalid_faces(faces):
-    diffs = np.abs(faces[:, [0, 0, 1]] - faces[:, [1, 2, 2]]).min(axis=1)
-    mask = diffs < 0.5
-    return faces[~mask]
-
-def clean_invalid_lines(lines):
-    diff = np.abs(lines[:, 0] - lines[:, 1])
-    return lines[np.abs(diff) >= 0.5]
 
 if __name__ == "__main__":
 
