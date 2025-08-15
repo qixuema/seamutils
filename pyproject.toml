@@ -1,14 +1,14 @@
 [project]
 name = "seamutils"
-dynamic = ["version"]                # 版本来自 VCS（git tag）
+dynamic = ["version"]                # 版本来自 VCS (git tag)
 requires-python = ">=3.10"
 description = "Shared utilities for seam processing"
 readme = "README.md"
-authors = [{ name = "Your Name", email = "you@example.com" }]
+authors = [{ name = "Xueqi Ma", email = "qixuemaa@gmail.com" }]
 # dependencies = []                 # 如有运行时依赖，填这里
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff"]            # 可选：开发依赖，配合 uv 使用很方便
+dev = ["pytest", "ruff"]            # 可选: 开发依赖, 配合 uv 使用很方便
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
