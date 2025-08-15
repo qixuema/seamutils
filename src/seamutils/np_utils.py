@@ -1,5 +1,5 @@
 import numpy as np
-from qixuema.geo_utils import rotation_matrix_z
+from qixuema.np_utils import rotation_matrix_z
 
 def get_cross_prod_mat(pVec_Arr):
     # pVec_Arr shape (3)
