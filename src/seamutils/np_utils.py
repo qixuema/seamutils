@@ -1,5 +1,5 @@
 import numpy as np
-
+from qixuema.geo_utils import rotation_matrix_z
 
 def get_cross_prod_mat(pVec_Arr):
     # pVec_Arr shape (3)
@@ -53,3 +53,11 @@ def filter_edges(edges):
     bad = ((deg[u] == 1) & (deg[v] > 2)) | ((deg[v] == 1) & (deg[u] > 2))
     keep = ~bad
     return edges[keep], keep
+
+
+def get_rotaion_matrix_3d(idx):
+    # idx 0, 1, 2, 3
+    angles = [0, 90, 180, 270]
+    angle = angles[idx]
+    rot_matrix = rotation_matrix_z(angle)
+    return rot_matrix
