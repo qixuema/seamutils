@@ -273,13 +273,16 @@ def extract_seams_by_faces(faces):
 
     return seam_edges
 
-def flatten_and_add_marker(chains: Chains) -> List[int]:
+def flatten_and_add_marker(chains: Chains):
     result = []
+    mask = []
     
     for chain in chains:
         start, end = chain[0], chain[-1]
         new_seq = [start] + [end] + chain[1:-1] + [-1]
+        tmp_mask = [0] + [0] + [1] * (len(chain) - 2) + [2]
         
         result.extend(new_seq)
+        mask.extend(tmp_mask)
     
-    return result
+    return [result, mask]

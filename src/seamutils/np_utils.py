@@ -95,3 +95,41 @@ def filter_edges(edges):
     bad = ((deg[u] == 1) & (deg[v] > 2)) | ((deg[v] == 1) & (deg[u] > 2))
     keep = ~bad
     return edges[keep], keep
+
+
+def rotation_matrix_x(theta):
+    theta_rad = np.radians(theta)
+    cos_t = np.cos(theta_rad)
+    sin_t = np.sin(theta_rad)
+    return np.array([
+        [1, 0, 0],
+        [0, cos_t, -sin_t],
+        [0, sin_t, cos_t]
+    ])
+
+def rotation_matrix_y(theta):
+    theta_rad = np.radians(theta)
+    cos_t = np.cos(theta_rad)
+    sin_t = np.sin(theta_rad)
+    return np.array([
+        [cos_t, 0, sin_t],
+        [0, 1, 0],
+        [-sin_t, 0, cos_t]
+    ])
+
+def rotation_matrix_z(theta):
+    theta_rad = np.radians(theta)
+    cos_t = np.cos(theta_rad)
+    sin_t = np.sin(theta_rad)
+    return np.array([
+        [cos_t, -sin_t, 0],
+        [sin_t, cos_t, 0],
+        [0, 0, 1]
+    ])
+
+def get_rotaion_matrix_3d(idx):
+    # idx 0, 1, 2, 3
+    angles = [0, 90, 180, 270]
+    angle = angles[idx]
+    rot_matrix = rotation_matrix_z(angle)
+    return rot_matrix
