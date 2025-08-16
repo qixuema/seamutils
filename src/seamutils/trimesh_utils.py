@@ -16,15 +16,17 @@ def save_seam_mesh(output_path, xyz, faces, seam_edges):
     mesh.export(output_path)
     
 
-def chains_to_seam_mesh(vertices, faces, chains, output_path='./'):
-    base_mesh = trimesh.Trimesh()
-    base_mesh.vertices = vertices
-    base_mesh.faces = faces
-
+def chains_to_seam_mesh(vertices, faces, chains, with_base_mesh=True):
     print(f'{len(chains)} chains')
 
     meshes = []
-    meshes.append(base_mesh)
+    
+    if with_base_mesh:
+        base_mesh = trimesh.Trimesh()
+        base_mesh.vertices = vertices
+        base_mesh.faces = faces
+
+        meshes.append(base_mesh)
     
     for i, chain in enumerate(chains):
         segments = np.stack([chain[:-1], chain[1:]], axis=1)
