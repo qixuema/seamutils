@@ -274,15 +274,20 @@ def extract_seams_by_faces(faces):
     return seam_edges
 
 def flatten_and_add_marker(chains: Chains):
-    result = []
-    mask = []
+    chains_1D = []
+    flags = []
     
     for chain in chains:
         start, end = chain[0], chain[-1]
-        new_seq = [start] + [end] + chain[1:-1] + [-1]
-        tmp_mask = [0] + [0] + [1] * (len(chain) - 2) + [2]
+        # 这里我们进行了一次倒序，是为了容易进行算法实现。现在的 Sequence 是 [start, end, p1, p2, ..., pN, -1], p1-N 是从 end 指向 start 的。
+        # 其中 -1 是一个特殊标记，表示该 chain 的结束。
+        new_seq = [start] + [end] + chain[1:-1][::-1] + [-1]
+        tmp_mask = [0] + [1] + [2] * (len(chain) - 2) + [-1]
         
-        result.extend(new_seq)
-        mask.extend(tmp_mask)
+        chains_1D.extend(new_seq)
+        flags.extend(tmp_mask)
     
-    return [result, mask]
+    chains_1D[-1] = -2
+    flags[-1] = -2
+    
+    return [chains_1D, flags]
