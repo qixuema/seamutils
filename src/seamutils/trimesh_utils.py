@@ -16,7 +16,7 @@ def save_seam_mesh(output_path, xyz, faces, seam_edges):
     mesh.export(output_path)
     
 
-def chains_to_seam_mesh(vertices, faces, chains, with_base_mesh=True):
+def chains_to_seam_mesh(vertices, faces, chains, with_base_mesh=True, radius=0.1):
     print(f'{len(chains)} chains')
 
     meshes = []
@@ -35,9 +35,12 @@ def chains_to_seam_mesh(vertices, faces, chains, with_base_mesh=True):
         chain_mesh = segments_to_prisms(
             segments,
             color=color,
+            radius=radius,
         )
 
         meshes.append(chain_mesh)
+        
+        # chain_mesh.export(f'chain_mesh_{i}.obj')
 
     mesh = trimesh.util.concatenate(meshes)
     
