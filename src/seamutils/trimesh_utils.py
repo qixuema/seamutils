@@ -25,6 +25,7 @@ def chains_to_seam_mesh(vertices, faces, chains, with_base_mesh=True):
         base_mesh = trimesh.Trimesh()
         base_mesh.vertices = vertices
         base_mesh.faces = faces
+        base_mesh.visual.vertex_colors = np.tile([200,200,200,200], (base_mesh.vertices.shape[0], 1))
 
         meshes.append(base_mesh)
     
