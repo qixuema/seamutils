@@ -2,21 +2,25 @@ import numpy as np
 import trimesh
 from qixuema.trimesh_utils import segments_to_prisms
 
-def save_seam_mesh(output_path, xyz, faces, seam_edges):
-    base_mesh = trimesh.Trimesh()
-    base_mesh.vertices = xyz
-    base_mesh.faces = faces
-    
+def save_seam_mesh(output_path, xyz, faces, seam_edges, with_base_mesh=True, radius=0.1):
+    if with_base_mesh:
+        base_mesh = trimesh.Trimesh()
+        base_mesh.vertices = xyz
+        base_mesh.faces = faces
+    else:
+        base_mesh = None
+        
     seam_segments = xyz[seam_edges]
     mesh = segments_to_prisms(
         seam_segments,
         base_mesh, 
+        radius=radius,
     )
     
     mesh.export(output_path)
     
 
-def chains_to_seam_mesh(vertices, faces, chains, with_base_mesh=True):
+def chains_to_seam_mesh(vertices, faces, chains, with_base_mesh=True, radius=0.1):
     print(f'{len(chains)} chains')
 
     meshes = []
@@ -36,9 +40,12 @@ def chains_to_seam_mesh(vertices, faces, chains, with_base_mesh=True):
         chain_mesh = segments_to_prisms(
             segments,
             color=color,
+            radius=radius,
         )
 
         meshes.append(chain_mesh)
+        
+        # chain_mesh.export(f'chain_mesh_{i}.obj')
 
     mesh = trimesh.util.concatenate(meshes)
     
