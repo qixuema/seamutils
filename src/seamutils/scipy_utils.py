@@ -58,7 +58,8 @@ def one_ring_neighbors_csr(vertices: np.ndarray,
         return neigh_dict, union_ids
 
     if return_coords:
-        return neigh_dict, vertices[union_ids]
+        coords_dict = {i: vertices[idxs] for i, idxs in neigh_dict.items()}
+        return neigh_dict, coords_dict
 
     return neigh_dict
 
@@ -88,3 +89,26 @@ def k_ring_csr(A: csr_matrix, seeds, k: int, include_seeds: bool = False) -> np.
 
     out = visited if include_seeds else (visited & ~np.isin(np.arange(Vn), seeds))
     return np.flatnonzero(out)
+
+
+
+
+# ============================================================
+#  一次构建邻接矩阵，然后 for 循环逐点（自回归）查邻域
+# ============================================================
+
+class VertexNeighborhood:
+    """
+    先构建一次 CSR 邻接；随后可：
+      - get_neighbors(i): 取顶点 i 的 1-ring 邻居
+    """
+    def __init__(self, vertices: np.ndarray, faces: np.ndarray):
+        self.vertices = np.asarray(vertices)
+        self.A = build_vertex_adjacency_csr(faces, n_vertices=len(vertices))
+
+    def get_neighbors(self, i: int, return_coords: bool = False) -> np.ndarray:
+        i = int(i)
+        neigh = self.A[i].indices
+        if return_coords:
+            return neigh, self.vertices[neigh]
+        return neigh
