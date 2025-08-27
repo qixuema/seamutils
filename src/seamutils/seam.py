@@ -1,4 +1,6 @@
 import numpy as np
+import os
+from pathlib import Path
 
 from qixuema.np_utils import normalize_vertices, deduplicate_lines, deduplicate_faces
 
@@ -27,7 +29,7 @@ def xyz_indices_to_uv_indices(xyz_indices, faces_xyz, faces_uv):
 
 
 
-def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6):
+def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6, tgt_dir=None, file_name=None):
     
     if edges_xyz is None:
         edges_xyz = faces_to_edges(faces_xyz)
@@ -103,6 +105,12 @@ def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6):
         # valid_faces = faces[~zero_uv_area_faces_mask]
         # seam_edges = extract_seams_by_faces(valid_faces)
         
+        
+        new_file_name = f'{file_name}_{part_id}.npz'
+        new_npz_file_path = os.path.join(tgt_dir, new_file_name)
+        if Path(new_npz_file_path).exists():
+            continue
+        
         sub_xyz, sub_faces_xyz, seam_edges = extract_seam_bpy(sub_xyz, sub_uv, sub_faces_xyz, sub_faces_uv)
         
         sub_xyz = np.array(sub_xyz)
@@ -113,7 +121,7 @@ def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6):
             
         # filter seam edges
         if len(seam_edges) == 0:
-            print(f'no seam edges for {part_id}')
+            # print(f'no seam edges for {part_id}')
             continue
     
         seam_edges = deduplicate_lines(seam_edges)
