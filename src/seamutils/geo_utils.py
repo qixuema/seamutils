@@ -1,5 +1,31 @@
 import numpy as np
 
+        
+def faces_to_edges(faces, return_index=False):
+    """
+    Given a list of faces (n,3), return a list of edges (n*3,2)
+
+    Parameters
+    -----------
+    faces : (n, 3) int
+      Vertex indices representing faces
+
+    Returns
+    -----------
+    edges : (n*3, 2) int
+      Vertex indices representing edges
+    """
+    faces = np.asanyarray(faces, np.int64)
+
+    # each face has three edges
+    edges = faces[:, [0, 1, 1, 2, 2, 0]].reshape((-1, 2))
+
+    if return_index:
+        # edges are in order of faces due to reshape
+        face_index = np.tile(np.arange(len(faces)), (3, 1)).T.reshape(-1)
+        return edges, face_index
+    return edges
+
 def create_polygon_pillar_from_line(line, n_sides=6, radius=0.1):
     """
     根据给定的线段生成N边形柱体, 底面为N边形。
@@ -171,3 +197,4 @@ if __name__ == "__main__":
         print("颜色:")
         print(color)
         print()
+        
