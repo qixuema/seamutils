@@ -81,7 +81,12 @@ def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6, 
     
         uv_indices, face_mask = xyz_indices_to_uv_indices(nodes, faces_xyz_updated, faces_uv_updated)
         sub_xyz = xyz_unique[nodes]
+        
         sub_faces_xyz = faces_xyz_updated[face_mask]
+        
+        if len(sub_faces_xyz) > 10_000:
+            continue
+        
         sub_uv = uv_unique[uv_indices]
         sub_faces_uv = faces_uv_updated[face_mask]
         
