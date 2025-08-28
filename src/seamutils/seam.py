@@ -5,7 +5,6 @@ from pathlib import Path
 from qixuema.np_utils import normalize_vertices, deduplicate_lines, deduplicate_faces
 
 from seamutils.np_utils import filter_edges
-from seamutils.bpy_utils import extract_seam_bpy
 from seamutils.graph_utils import build_graph
 from seamutils.geo_utils import faces_to_edges
 
@@ -116,7 +115,14 @@ def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6, 
         if Path(new_npz_file_path).exists():
             continue
         
+        from seamutils.bpy_utils import extract_seam_bpy
+        
         sub_xyz, sub_faces_xyz, seam_edges = extract_seam_bpy(sub_xyz, sub_uv, sub_faces_xyz, sub_faces_uv)
+        
+        # 检查 sub_xyz 里面没有 nan 或者 inf
+        if np.isnan(sub_xyz).any() or np.isinf(sub_xyz).any():
+            print(f'sub_xyz has nan or inf, skip part {part_id} of {file_name}')
+            continue
         
         sub_xyz = np.array(sub_xyz)
         sub_faces_xyz = np.array(sub_faces_xyz)
