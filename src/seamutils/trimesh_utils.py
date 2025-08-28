@@ -33,7 +33,7 @@ def chains_to_seam_mesh(vertices, faces, chains, with_base_mesh=False, radius=0.
 
         meshes.append(base_mesh)
     
-    seam_mesh = polylines_to_mesh(chains, radius=radius, base_mesh=base_mesh)
+    seam_mesh = polylines_to_mesh(chains, radius=radius)
     meshes.append(seam_mesh)
     
     mesh = trimesh.util.concatenate(meshes)
