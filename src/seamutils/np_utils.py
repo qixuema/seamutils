@@ -155,7 +155,7 @@ def sort_vertices_and_update_indices(sample):
     assert len(chains) > 0, "No valid chains found"
     
     chains = sort_and_deduplicate_chains(chains)
-    chains_1D_updated = np.array(flatten_and_add_marker(chains))
+    chains_1D_dict = flatten_and_add_marker(chains)
     
     # Just for debug
     # random_idx = np.random.randint(10, 30)
@@ -170,5 +170,5 @@ def sort_vertices_and_update_indices(sample):
     return {
         'vertices': vertices_updated,
         'faces': faces_updated,
-        'chains_1D': chains_1D_updated,
+        'chains': chains_1D_dict,
     }
