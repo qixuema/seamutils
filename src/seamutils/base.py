@@ -4,6 +4,12 @@ from collections import Counter
 
 Chains = List[List[int]]
 
+def ratio_of_len2_chains(chains: Chains) -> float:
+    total = len(chains)
+    if total == 0:
+        return 2.0
+    count_len2 = sum(len(c) == 2 for c in chains)
+    return count_len2 / total
 
 def compute_chains_endpoint_degrees(chains: Chains) -> dict[int, int]:
     """
@@ -290,4 +296,10 @@ def flatten_and_add_marker(chains: Chains):
     chains_1D[-1] = -2
     flags[-1] = -2
     
-    return [chains_1D, flags]
+    # return [chains_1D, flags]
+    assert len(chains_1D) == len(flags), "chains_1D and flags must have the same length"
+    
+    return {
+        'chains_1D': chains_1D,
+        'flags': flags,
+    }
