@@ -1,5 +1,9 @@
 import numpy as np
 from qixuema.np_utils import deduplicate_lines, deduplicate_faces, rotation_matrix_z
+from seamutils.base import (
+    sort_and_deduplicate_chains, split_and_filter_chains_1D, split_graph_into_chains,
+    filter_chains, flatten_and_add_marker
+)
 
 def get_cross_prod_mat(pVec_Arr):
     # pVec_Arr shape (3)
@@ -118,3 +122,53 @@ def clean_invalid_faces(faces):
 def clean_invalid_lines(lines):
     diff = np.abs(lines[:, 0] - lines[:, 1])
     return lines[np.abs(diff) >= 0.5]
+
+def sort_vertices_and_update_indices(sample):
+    """
+    assume the vertices and lines are unique
+    """
+    
+    # append a new vertex to the end of the vertices
+    vertices = sample['vertices']
+    faces = sample['faces']
+    chains_1D = sample['chains_1D'] if 'chains_1D' in sample else None
+    lines = sample['lines']
+    
+    # Sort vertices by z then y then x.
+    sort_vtx_inds = np.lexsort(vertices.T)
+    
+    vertices_updated = vertices[sort_vtx_inds]
+
+    reverse_sort_vtx_inds = np.argsort(sort_vtx_inds)    
+
+    if chains_1D is None:
+        
+        lines_updated = reverse_sort_vtx_inds[lines]
+        
+        chains = split_graph_into_chains(lines_updated)
+        chains = filter_chains(chains)
+    else:
+        updated_chains_1D = np.where(chains_1D == -1, -1, reverse_sort_vtx_inds[chains_1D]) # update the chains_1D indices
+        
+        chains = split_and_filter_chains_1D(updated_chains_1D)
+    
+    assert len(chains) > 0, "No valid chains found"
+    
+    chains = sort_and_deduplicate_chains(chains)
+    chains_1D_updated = np.array(flatten_and_add_marker(chains))
+    
+    # Just for debug
+    # random_idx = np.random.randint(10, 30)
+    # chains_1D_updated = chains_1D_updated[:random_idx]
+    
+    if faces is not None:
+        # Re-index faces and tris to re-ordered vertices.
+        faces_updated = reverse_sort_vtx_inds[faces]
+    else:
+        faces_updated = None
+
+    return {
+        'vertices': vertices_updated,
+        'faces': faces_updated,
+        'chains_1D': chains_1D_updated,
+    }
