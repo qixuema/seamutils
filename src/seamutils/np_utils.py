@@ -66,9 +66,9 @@ def get_rotaion_matrix_3d(idx):
     rot_matrix = rotation_matrix_z(angle)
     return rot_matrix
 
-def remove_duplicate_vertices_and_lines_for_seam(mesh:dict, tolerance=0.0001):
+def remove_duplicate_vertices_and_lines_for_seam(mesh_data:dict, tolerance=0.0001):
     # 注意，在这部分的代码中，我们并没有对顶点的顺序进行排序，我们只是剔除了重复（三维空间接近）的顶点,
-    vertices = mesh['vertices']
+    vertices = mesh_data['vertices']
 
     if not np.all(np.mod(vertices, 1) == 0):
         adjusted_points = np.round(vertices / tolerance) * tolerance
@@ -78,11 +78,11 @@ def remove_duplicate_vertices_and_lines_for_seam(mesh:dict, tolerance=0.0001):
     # 移除重复的点并创建索引映射    
     unique_points, inverse_indices = np.unique(adjusted_points, axis=0, return_inverse=True)
 
-    mesh['vertices'] = unique_points
+    mesh_data['vertices'] = unique_points
 
     # if lines are provided, update the lines' indices
-    if 'lines' in mesh and mesh['lines'] is not None:
-        lines = mesh['lines']
+    if 'lines' in mesh_data and mesh_data['lines'] is not None:
+        lines = mesh_data['lines']
 
         updated_lines = inverse_indices[lines] # 更新线段索引，但是线段的顺序还是不变
 
@@ -90,11 +90,11 @@ def remove_duplicate_vertices_and_lines_for_seam(mesh:dict, tolerance=0.0001):
 
         valid_lines = clean_invalid_lines(unique_lines)
         
-        mesh['lines'] = valid_lines
+        mesh_data['lines'] = valid_lines
 
     # If faces are provided, update the faces' indices
-    if 'faces' in mesh and mesh['faces'] is not None:
-        faces = mesh['faces']
+    if 'faces' in mesh_data and mesh_data['faces'] is not None:
+        faces = mesh_data['faces']
         updated_faces = inverse_indices[faces] # update the vtx idx in faces
                 
         unique_faces = deduplicate_faces(updated_faces)
@@ -102,17 +102,17 @@ def remove_duplicate_vertices_and_lines_for_seam(mesh:dict, tolerance=0.0001):
         unique_faces = clean_invalid_faces(unique_faces)
         
         # Update faces in the lineset
-        mesh['faces'] = unique_faces
+        mesh_data['faces'] = unique_faces
     
-    if 'chains_1D' in mesh and mesh['chains_1D'] is not None:
+    if 'chains_1D' in mesh_data and mesh_data['chains_1D'] is not None:
         
-        chains_1D = mesh['chains_1D']
+        chains_1D = mesh_data['chains_1D']
         
         updated_chains_1D = np.where(chains_1D == -1, -1, inverse_indices[chains_1D]) # update the chains_1D indices
 
-        mesh['chains_1D'] = updated_chains_1D
+        mesh_data['chains_1D'] = updated_chains_1D
     
-    return mesh
+    return mesh_data
 
 def clean_invalid_faces(faces):
     diffs = np.abs(faces[:, [0, 0, 1]] - faces[:, [1, 2, 2]]).min(axis=1)
