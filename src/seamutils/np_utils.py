@@ -2,7 +2,7 @@ import numpy as np
 from qixuema.np_utils import deduplicate_lines, deduplicate_faces, rotation_matrix_z
 from seamutils.base import (
     sort_and_deduplicate_chains, split_and_filter_chains_1D, split_graph_into_chains,
-    filter_chains, flatten_and_add_marker
+    filter_chains, flatten_and_add_marker, ratio_of_len2_chains,
 )
 
 def get_cross_prod_mat(pVec_Arr):
@@ -145,7 +145,7 @@ def sort_vertices_and_update_indices(sample):
         
         lines_updated = reverse_sort_vtx_inds[lines]
         
-        chains = split_graph_into_chains(lines_updated)
+        chains = split_graph_into_chains(lines_updated.tolist())
         chains = filter_chains(chains)
     else:
         updated_chains_1D = np.where(chains_1D == -1, -1, reverse_sort_vtx_inds[chains_1D]) # update the chains_1D indices
@@ -156,6 +156,9 @@ def sort_vertices_and_update_indices(sample):
     
     chains = sort_and_deduplicate_chains(chains)
     chains_1D_dict = flatten_and_add_marker(chains)
+    
+    chains_1D_dict['ratio2'] = ratio_of_len2_chains(chains)
+    chains_1D_dict['chains'] = chains
     
     # Just for debug
     # random_idx = np.random.randint(10, 30)

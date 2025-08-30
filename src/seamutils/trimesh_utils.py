@@ -20,8 +20,8 @@ def save_seam_mesh(output_path, xyz, faces, seam_edges, with_base_mesh=True, rad
     mesh.export(output_path)
     
 
-def chains_to_seam_mesh(vertices, faces, chains, with_base_mesh=False, radius=0.1):
-    print(f'{len(chains)} chains')
+def chains_to_seam_mesh(vertices, faces, chains_coords, with_base_mesh=False, radius=0.1):
+    print(f'{len(chains_coords)} chains')
 
     meshes = []
     
@@ -33,7 +33,7 @@ def chains_to_seam_mesh(vertices, faces, chains, with_base_mesh=False, radius=0.
 
         meshes.append(base_mesh)
     
-    seam_mesh = polylines_to_mesh(chains, radius=radius)
+    seam_mesh = polylines_to_mesh(chains_coords, radius=radius)
     meshes.append(seam_mesh)
     
     mesh = trimesh.util.concatenate(meshes)
