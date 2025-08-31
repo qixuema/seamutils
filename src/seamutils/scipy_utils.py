@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.sparse import coo_matrix, csr_matrix
+from scipy.sparse.csgraph import connected_components
 
 # -------- 构建顶点邻接矩阵（CSR） --------
 def build_vertex_adjacency_csr(faces: np.ndarray, n_vertices: int | None = None) -> csr_matrix:
@@ -90,9 +91,6 @@ def k_ring_csr(A: csr_matrix, seeds, k: int, include_seeds: bool = False) -> np.
     out = visited if include_seeds else (visited & ~np.isin(np.arange(Vn), seeds))
     return np.flatnonzero(out)
 
-
-
-
 # ============================================================
 #  一次构建邻接矩阵，然后 for 循环逐点（自回归）查邻域
 # ============================================================
@@ -112,3 +110,30 @@ class VertexNeighborhood:
         if return_coords:
             return neigh, self.vertices[neigh]
         return neigh
+
+def count_uv_islands(faces_uv: np.ndarray):
+    faces_uv = np.asarray(faces_uv, dtype=np.int64)
+    F = faces_uv.shape[0]
+    e01 = faces_uv[:, [0, 1]]
+    e12 = faces_uv[:, [1, 2]]
+    e20 = faces_uv[:, [2, 0]]
+    edges = np.concatenate([e01, e12, e20], axis=0)
+    edges.sort(axis=1)
+    valid = edges[:, 0] != edges[:, 1]
+    edges = edges[valid]
+    face_ids = np.repeat(np.arange(F, dtype=np.int64), 3)[valid]
+
+    order = np.lexsort((edges[:, 1], edges[:, 0]))
+    edges_sorted = edges[order]
+    faces_sorted = face_ids[order]
+    same = np.all(edges_sorted[1:] == edges_sorted[:-1], axis=1)
+    idx = np.nonzero(same)[0]
+
+    rows = faces_sorted[idx]
+    cols = faces_sorted[idx + 1]
+    data = np.ones_like(rows, dtype=np.int8)
+
+    A = coo_matrix((data, (rows, cols)), shape=(F, F))
+    A = A + A.T  # 无向图
+    n, labels = connected_components(A, directed=False, return_labels=True)
+    return n, labels
