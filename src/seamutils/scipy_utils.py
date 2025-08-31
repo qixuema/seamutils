@@ -111,29 +111,42 @@ class VertexNeighborhood:
             return neigh, self.vertices[neigh]
         return neigh
 
-def count_uv_islands(faces_uv: np.ndarray):
+def count_uv_islands(faces_uv: np.ndarray, return_labels: bool = False):
+    """
+    按“共享任意 UV 顶点”连通来统计 UV 岛。
+    """
     faces_uv = np.asarray(faces_uv, dtype=np.int64)
     F = faces_uv.shape[0]
-    e01 = faces_uv[:, [0, 1]]
-    e12 = faces_uv[:, [1, 2]]
-    e20 = faces_uv[:, [2, 0]]
-    edges = np.concatenate([e01, e12, e20], axis=0)
-    edges.sort(axis=1)
-    valid = edges[:, 0] != edges[:, 1]
-    edges = edges[valid]
-    face_ids = np.repeat(np.arange(F, dtype=np.int64), 3)[valid]
+    if F == 0:
+        return (0, np.empty((0,), dtype=np.int64)) if return_labels else 0
 
-    order = np.lexsort((edges[:, 1], edges[:, 0]))
-    edges_sorted = edges[order]
-    faces_sorted = face_ids[order]
-    same = np.all(edges_sorted[1:] == edges_sorted[:-1], axis=1)
-    idx = np.nonzero(same)[0]
+    flat = faces_uv.ravel()
+    face_ids = np.repeat(np.arange(F, dtype=np.int64), faces_uv.shape[1])
 
-    rows = faces_sorted[idx]
-    cols = faces_sorted[idx + 1]
-    data = np.ones_like(rows, dtype=np.int8)
+    # 过滤无效 UV 索引
+    valid = flat >= 0
+    flat = flat[valid]
+    face_ids = face_ids[valid]
 
-    A = coo_matrix((data, (rows, cols)), shape=(F, F))
-    A = A + A.T  # 无向图
-    n, labels = connected_components(A, directed=False, return_labels=True)
-    return n, labels
+    if flat.size == 0:
+        # 没有任何有效 UV：每张面自成一个岛
+        labels = np.arange(F, dtype=np.int64)
+        return (F, labels) if return_labels else F
+
+    U = int(flat.max()) + 1  # UV 顶点数（索引最大值 + 1）
+
+    # 面-UV 顶点的稀疏关联矩阵 B (F x U)
+    data = np.ones_like(face_ids, dtype=np.bool_)
+    B = coo_matrix((data, (face_ids, flat)), shape=(F, U), dtype=bool).tocsr()
+
+    # 面-面邻接：是否共享任意一个 UV 顶点
+    # 注意：布尔乘法更省内存；结果包含对角线（自连接），正好保留孤立面
+    A = (B @ B.T).astype(bool).tocsr()
+
+    # 连通分量 = UV 岛
+    n_islands, labels = connected_components(A, directed=False, return_labels=True)
+
+    if return_labels:
+        return int(n_islands), labels.astype(np.int64, copy=False)
+    else:
+        return int(n_islands)
