@@ -46,20 +46,20 @@ def sort_chains(chains: Chains) -> Chains:
     return chains
 
 def sort_chains_by_length(chains: Chains) -> Chains:
-    def sort_chain(chain: List[int]) -> List[int]:
-        # sort the chain by the first and last point
-        if chain[0] > chain[-1]:
-            chain = chain[::-1]
-        elif chain[0] == chain[-1]:
-            chain = chain[:-1]
-            min_value = min(chain)
-            min_index = chain.index(min_value)
-            chain = chain[min_index:] + chain[:min_index]
-            chain.append(chain[0])
-        return chain
+    # def sort_chain(chain: List[int]) -> List[int]:
+    #     # sort the chain by the first and last point
+    #     if chain[0] > chain[-1]:
+    #         chain = chain[::-1]
+    #     elif chain[0] == chain[-1]:
+    #         chain = chain[:-1]
+    #         min_value = min(chain)
+    #         min_index = chain.index(min_value)
+    #         chain = chain[min_index:] + chain[:min_index]
+    #         chain.append(chain[0])
+    #     return chain
 
     # sort each chain
-    chains = [sort_chain(chain) for chain in chains]
+    # chains = [sort_chain(chain) for chain in chains]
     
     # sort the chains by the length and the first point
     chains.sort(key=lambda x: (-len(x), x[0]))
@@ -101,7 +101,10 @@ def sort_and_deduplicate_chains(chains: Chains) -> Chains:
 
     # unique_chains.sort(key=lambda x: x[0])
     # unique_chains.sort(key=lambda x: (len(x), x[0]))
-    unique_chains = sort_chains_by_length(unique_chains)
+    # unique_chains = sort_chains_by_length(unique_chains)
+    
+    unique_chains.sort(key=lambda x: (-len(x), x[0]))
+    
 
     return unique_chains
 
