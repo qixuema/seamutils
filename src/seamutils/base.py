@@ -243,7 +243,7 @@ def split_and_filter_chains_1D(chains_1D: List[int]) -> Chains:
     return chains
 
 
-def filter_chains(chains: Chains) -> Chains:
+def filter_chains(chains: Chains, mesh_boundary_vertice_idxes: List[int] = None) -> Chains:
     """"
     Filter burr and float chains
     burr chains: chains with length 2 and one of the nodes has degree 1
@@ -255,10 +255,21 @@ def filter_chains(chains: Chains) -> Chains:
     
     filtered_chains = []
     
+    check_inner_chain = False
+    if mesh_boundary_vertice_idxes is not None:
+        check_inner_chain = True
+    
+    
     for chain in chains:
         if len(chain) == 2:
             if element_counts[chain[0]] == 1 or element_counts[chain[1]] == 1:
                 continue
+        
+        if check_inner_chain:
+            if len(chain) < 5:
+                if element_counts[chain[0]] == 1 and element_counts[chain[1]] == 1:
+                    if chain[0] not in mesh_boundary_vertice_idxes and chain[1] not in mesh_boundary_vertice_idxes:
+                        continue
         
         filtered_chains.append(chain)
     

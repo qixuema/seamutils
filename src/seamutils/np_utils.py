@@ -1,5 +1,5 @@
 import numpy as np
-from qixuema.np_utils import deduplicate_lines, deduplicate_faces, rotation_matrix_z
+from qixuema.np_utils import deduplicate_lines, deduplicate_faces, rotation_matrix_z, boundary_vertex_indices
 from seamutils.base import (
     sort_and_deduplicate_chains, split_and_filter_chains_1D, split_graph_into_chains,
     filter_chains, flatten_and_add_marker, ratio_of_len2_chains,
@@ -146,7 +146,11 @@ def sort_vertices_and_update_indices(sample):
         lines_updated = reverse_sort_vtx_inds[lines]
         
         chains = split_graph_into_chains(lines_updated.tolist())
-        chains = filter_chains(chains)
+        
+        # NOTE：这里如果一条 chain 完全位于一个 surface 的内部，则过滤掉；但是这种情况可能会收到 non-manif vert 的影响，因为 non-manif vert 也可能会被认为是 boundary edge！
+        boundary_vtx_idxes = boundary_vertex_indices(faces)
+        
+        chains = filter_chains(chains, boundary_vtx_idxes)
     else:
         updated_chains_1D = np.where(chains_1D == -1, -1, reverse_sort_vtx_inds[chains_1D]) # update the chains_1D indices
         
