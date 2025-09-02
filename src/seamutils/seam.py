@@ -2,11 +2,12 @@ import numpy as np
 import os
 from pathlib import Path
 
-from qixuema.np_utils import normalize_vertices, deduplicate_lines, deduplicate_faces
+from qixuema.np_utils import normalize_vertices, deduplicate_lines, deduplicate_faces, clean_invalid_lines
 
 from seamutils.np_utils import filter_edges
 from seamutils.graph_utils import build_graph
 from seamutils.geo_utils import faces_to_edges
+from seamutils.bpy_utils import extract_seam_bpy
 
 
 def xyz_indices_to_uv_indices(xyz_indices, faces_xyz, faces_uv):
@@ -66,9 +67,13 @@ def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6, 
         edges_xyz_updated = edges_xyz
         faces_xyz_updated = faces_xyz
         faces_uv_updated = faces_uv
+        xyz_unique = xyz
+        uv_unique = uv
 
 
     # edges deduplication
+    
+    edges_xyz_updated = clean_invalid_lines(edges_xyz_updated)
     
     edges_xyz_unique = deduplicate_lines(edges_xyz_updated)
 
@@ -80,6 +85,9 @@ def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6, 
     for part_id, sg in enumerate(subgraphs):
         nodes = list(sg.nodes())
         nodes.sort()
+        
+        if len(nodes) < 3:
+            continue
     
         uv_indices, face_mask = xyz_indices_to_uv_indices(nodes, faces_xyz_updated, faces_uv_updated)
         sub_xyz = xyz_unique[nodes]
@@ -90,6 +98,10 @@ def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6, 
             continue
         
         sub_uv = uv_unique[uv_indices]
+        
+        if len(sub_uv) <= len(sub_xyz):
+            continue
+        
         sub_faces_uv = faces_uv_updated[face_mask]
         
         xyz_map = np.full(xyz_unique.shape[0], -1, dtype=np.int32)
@@ -117,14 +129,22 @@ def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6, 
         new_npz_file_path = os.path.join(tgt_dir, new_file_name)
         if Path(new_npz_file_path).exists():
             continue
+                
+        norm_sub_xyz, xyz_center, xyz_scale = normalize_vertices(sub_xyz, scale=1.0)
+        norm_sub_uv, uv_center, uv_scale = normalize_vertices(sub_uv, scale=1.0)
         
-        from seamutils.bpy_utils import extract_seam_bpy
+        center_scale = np.concatenate([
+            np.array(xyz_center).ravel(),   # 3 元素
+            np.array([xyz_scale]),          # 1 元素
+            np.array(uv_center).ravel(),    # 2 元素
+            np.array([uv_scale])            # 1 元素
+        ])   
         
-        sub_xyz, sub_faces_xyz, seam_edges = extract_seam_bpy(sub_xyz, sub_uv, sub_faces_xyz, sub_faces_uv)
+        
+        sub_xyz, sub_faces_xyz, seam_edges = extract_seam_bpy(norm_sub_xyz, norm_sub_uv, sub_faces_xyz, sub_faces_uv)
         
         # 检查 sub_xyz 里面没有 nan 或者 inf
-        if np.isnan(sub_xyz).any() or np.isinf(sub_xyz).any():
-            print(f'sub_xyz has nan or inf, skip part {part_id} of {file_name}')
+        if not np.isfinite(sub_xyz).all():
             continue
         
         sub_xyz = np.array(sub_xyz)
@@ -148,6 +168,7 @@ def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6, 
             'seam_edges': seam_edges,
             'uv': sub_uv,
             'faces_uv': sub_faces_uv,
+            'center_scale': center_scale,
         }
         
         parts.append(new_sample)
