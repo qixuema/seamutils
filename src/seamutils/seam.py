@@ -28,46 +28,49 @@ def xyz_indices_to_uv_indices(xyz_indices, faces_xyz, faces_uv):
 
 
 
-def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6, tgt_dir=None, file_name=None):
+def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6, tgt_dir=None, file_name=None, preprocess=True):
     
     if edges_xyz is None:
         edges_xyz = faces_to_edges(faces_xyz)
     
-    # xyz process
+    if preprocess:
+        
+        # xyz process
 
-    # xyz, _, _ = normalize_vertices(xyz, scale=1.0)
-    # uv, _, _ = normalize_vertices(uv, scale=1.0)
-    
-    rounded_xyz = np.round(xyz / tolerance) * tolerance
-    
-    uv_tolerance = min(tolerance, 1e-6)
-    rounded_uv = np.round(uv / uv_tolerance) * uv_tolerance
-    
-    xyz_unique, inverse = np.unique(rounded_xyz, axis=0, return_inverse=True)
-    
-    # update faces_xyz and edges_xyz with deduplicated xyz
+        xyz, _, _ = normalize_vertices(xyz, scale=1.0)
+        uv, _, _ = normalize_vertices(uv, scale=1.0)
+        
+        rounded_xyz = np.round(xyz / tolerance) * tolerance
+        
+        uv_tolerance = min(tolerance, 1e-6)
+        rounded_uv = np.round(uv / uv_tolerance) * uv_tolerance
+        
+        xyz_unique, xyz_inverse = np.unique(rounded_xyz, axis=0, return_inverse=True)
+        
+        # update faces_xyz with deduplicated xyz
 
-    faces_xyz_updated = inverse[faces_xyz]
-    edges_xyz_updated = inverse[edges_xyz]
+        faces_xyz_updated = xyz_inverse[faces_xyz]
+        edges_xyz_updated = xyz_inverse[edges_xyz]
+
+        # uv process
+        
+        uv_unique, uv_inverse = np.unique(rounded_uv, axis=0, return_inverse=True)
+
+        # update faces_uv with deduplicated uv
+        faces_uv_updated = uv_inverse[faces_uv]
+
+        # faces deduplication
+        faces_xyz_updated, faces_uv_updated = deduplicate_faces(faces_xyz_updated, faces_uv_updated)
+    
+    else:
+        edges_xyz_updated = edges_xyz
+        faces_xyz_updated = faces_xyz
+        faces_uv_updated = faces_uv
 
 
     # edges deduplication
-    sorted_edges_xyz_updated = np.sort(edges_xyz_updated, axis=1) # 需要注意一下，这里对线段内的方向进行了更新
     
-    edges_xyz_unique, indices = np.unique(sorted_edges_xyz_updated, axis=0, return_index=True)
-    sorted_indices = np.argsort(indices)
-    edges_xyz_unique = edges_xyz_unique[sorted_indices]
-
-    # uv process
-    
-    uv_unique, inverse = np.unique(rounded_uv, axis=0, return_inverse=True)
-
-    # update faces_uv and edges_uv with deduplicated uv
-
-    faces_uv_updated = inverse[faces_uv]
-
-    # faces deduplication
-    faces_xyz_updated, faces_uv_updated = deduplicate_faces(faces_xyz_updated, faces_uv_updated)
+    edges_xyz_unique = deduplicate_lines(edges_xyz_updated)
 
     # split mesh by xyz
     subgraphs = build_graph(edges_xyz_unique)
@@ -110,7 +113,7 @@ def extract_seams(xyz, uv, faces_xyz, faces_uv, edges_xyz=None, tolerance=1e-6, 
         # seam_edges = extract_seams_by_faces(valid_faces)
         
         
-        new_file_name = f'{file_name}_{part_id}.npz'
+        new_file_name = f'{file_name}_p{part_id}.npz'
         new_npz_file_path = os.path.join(tgt_dir, new_file_name)
         if Path(new_npz_file_path).exists():
             continue
