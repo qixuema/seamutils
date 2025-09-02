@@ -150,3 +150,47 @@ def count_uv_islands(faces_uv: np.ndarray, return_labels: bool = False):
         return int(n_islands), labels.astype(np.int64, copy=False)
     else:
         return int(n_islands)
+
+
+
+def build_neighbor_table_from_csr(
+    A: csr_matrix,
+    K: int | None = None,
+    pad_val: int = -1,
+    sort_each_row: bool = False
+) -> np.ndarray:
+    """
+    A: 顶点邻接矩阵 (CSR,VxV)
+    K: 每个顶点最多保留的邻居数; None 则取该网格的最大度数
+    pad_val: 邻居不足时用的填充值 (例如 -1)
+    sort_each_row: 是否对每个顶点的邻居进行排序 (默认不排序，沿用 CSR 的顺序)
+
+    return: nbr_table [V, K]，第 v 行是顶点 v 的 K 个邻居 (不足用 pad_val 补)
+    """
+    assert isinstance(A, csr_matrix)
+    indptr = A.indptr           # 长度 V+1
+    indices = A.indices         # 所有邻居的拼接
+    V = A.shape[0]
+    deg = indptr[1:] - indptr[:-1]
+    if K is None:
+        K = int(deg.max()) if V > 0 else 0
+
+    nbr_table = np.full((V, K), pad_val, dtype=np.int64)
+    for v in range(V):
+        row = indices[indptr[v]:indptr[v+1]]
+        if sort_each_row:
+            row = np.sort(row, kind='stable')
+        L = min(K, row.size)
+        if L > 0:
+            nbr_table[v, :L] = row[:L]
+    return nbr_table
+
+
+def build_batch_neighbor_table(neigh_list, K: int | None = None, pad_val: int = -1):
+    """
+    V 可不同；返回一个长度 B 的列表，其中每个元素是 [V_b, K]。
+    """
+    csrs = [n.A if hasattr(n, "A") else n for n in neigh_list]
+    if K is None:
+        K = max(int((c.indptr[1:] - c.indptr[:-1]).max()) for c in csrs)
+    return [build_neighbor_table_from_csr(c, K=K, pad_val=pad_val) for c in csrs]
