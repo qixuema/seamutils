@@ -194,3 +194,11 @@ def build_batch_neighbor_table(neigh_list, K: int | None = None, pad_val: int = 
     if K is None:
         K = max(int((c.indptr[1:] - c.indptr[:-1]).max()) for c in csrs)
     return [build_neighbor_table_from_csr(c, K=K, pad_val=pad_val) for c in csrs]
+
+
+def get_candidate_cut_points(vertices, faces, query_idx):
+    
+    neigh_dict = one_ring_neighbors_csr(vertices, faces, query_idx)
+    
+    return neigh_dict
+    

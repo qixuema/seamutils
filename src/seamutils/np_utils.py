@@ -1,5 +1,9 @@
 import numpy as np
-from qixuema.np_utils import deduplicate_lines, deduplicate_faces, rotation_matrix_z, boundary_vertex_indices
+from qixuema.np_utils import (
+    deduplicate_lines, deduplicate_faces, 
+    rotation_matrix_z, boundary_vertex_indices,
+    clean_invalid_faces, clean_invalid_lines,
+)
 from seamutils.base import (
     sort_and_deduplicate_chains, split_and_filter_chains_1D, split_graph_into_chains,
     filter_chains, flatten_and_add_marker, ratio_of_len2_chains,
@@ -66,7 +70,7 @@ def get_rotaion_matrix_3d(idx):
     rot_matrix = rotation_matrix_z(angle)
     return rot_matrix
 
-def remove_duplicate_vertices_and_lines_for_seam(mesh_data:dict, tolerance=0.0001):
+def remove_duplicate_vertices_and_lines_for_seam(mesh_data:dict, tolerance=1e-6):
     # 注意，在这部分的代码中，我们并没有对顶点的顺序进行排序，我们只是剔除了重复（三维空间接近）的顶点,
     vertices = mesh_data['vertices']
 
@@ -114,14 +118,14 @@ def remove_duplicate_vertices_and_lines_for_seam(mesh_data:dict, tolerance=0.000
     
     return mesh_data
 
-def clean_invalid_faces(faces):
-    diffs = np.abs(faces[:, [0, 0, 1]] - faces[:, [1, 2, 2]]).min(axis=1)
-    mask = diffs < 0.5
-    return faces[~mask]
+# def clean_invalid_faces(faces):
+#     diffs = np.abs(faces[:, [0, 0, 1]] - faces[:, [1, 2, 2]]).min(axis=1)
+#     mask = diffs < 0.5
+#     return faces[~mask]
 
-def clean_invalid_lines(lines):
-    diff = np.abs(lines[:, 0] - lines[:, 1])
-    return lines[np.abs(diff) >= 0.5]
+# def clean_invalid_lines(lines):
+#     diff = np.abs(lines[:, 0] - lines[:, 1])
+#     return lines[np.abs(diff) >= 0.5]
 
 def sort_vertices_and_update_indices(sample):
     """
