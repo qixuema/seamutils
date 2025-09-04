@@ -3,6 +3,7 @@ from qixuema.np_utils import (
     deduplicate_lines, deduplicate_faces, 
     rotation_matrix_z, boundary_vertex_indices,
     clean_invalid_faces, clean_invalid_lines,
+    tolerant_lexsort,
 )
 from seamutils.base import (
     sort_and_deduplicate_chains, split_and_filter_chains_1D, split_graph_into_chains,
@@ -139,7 +140,8 @@ def sort_vertices_and_update_indices(sample):
     lines = sample['lines']
     
     # Sort vertices by z then y then x.
-    sort_vtx_inds = np.lexsort(vertices.T)
+    # sort_vtx_inds = np.lexsort(vertices.T)
+    sort_vtx_inds = tolerant_lexsort(vertices)
     
     vertices_updated = vertices[sort_vtx_inds]
 
