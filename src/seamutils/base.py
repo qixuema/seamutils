@@ -4,7 +4,7 @@ from collections import Counter
 
 Chains = List[List[int]]
 
-def ratio_of_len2_chains(chains: Chains) -> float:
+def ratio_of_single_edge_chain(chains: Chains) -> float:
     total = len(chains)
     if total == 0:
         return 2.0
