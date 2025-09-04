@@ -8,7 +8,7 @@ from qixuema.np_utils import (
 )
 from seamutils.base import (
     sort_and_deduplicate_chains, split_and_filter_chains_1D, split_graph_into_chains,
-    filter_chains, flatten_and_add_marker, ratio_of_len2_chains,
+    filter_chains, flatten_and_add_marker, ratio_of_single_edge_chain ,
 )
 
 def get_cross_prod_mat(pVec_Arr):
@@ -159,7 +159,7 @@ def sort_vertices_and_update_indices(sample):
     chains = sort_and_deduplicate_chains(chains)
     chains_1D_dict = flatten_and_add_marker(chains)
     
-    chains_1D_dict['ratio2'] = ratio_of_len2_chains(chains)
+    chains_1D_dict['ratio_single_edge_chain'] = ratio_of_single_edge_chain(chains)
     chains_1D_dict['chains'] = chains
     
     # Just for debug
