@@ -3,7 +3,8 @@ from qixuema.np_utils import (
     deduplicate_lines, deduplicate_faces, 
     rotation_matrix_z, boundary_vertex_indices,
     clean_invalid_faces, clean_invalid_lines,
-    tolerant_lexsort,
+    tolerant_lexsort, normalize_vertices, 
+    rotation_matrix_x, rotation_matrix_y, rotation_matrix_z,
 )
 from seamutils.base import (
     sort_and_deduplicate_chains, split_and_filter_chains_1D, split_graph_into_chains,
@@ -119,15 +120,6 @@ def remove_duplicate_vertices_and_lines_for_seam(mesh_data:dict, tolerance=1e-6)
     
     return mesh_data
 
-# def clean_invalid_faces(faces):
-#     diffs = np.abs(faces[:, [0, 0, 1]] - faces[:, [1, 2, 2]]).min(axis=1)
-#     mask = diffs < 0.5
-#     return faces[~mask]
-
-# def clean_invalid_lines(lines):
-#     diff = np.abs(lines[:, 0] - lines[:, 1])
-#     return lines[np.abs(diff) >= 0.5]
-
 def sort_vertices_and_update_indices(sample):
     """
     assume the vertices and lines are unique
@@ -185,3 +177,77 @@ def sort_vertices_and_update_indices(sample):
         'faces': faces_updated,
         'chains': chains_1D_dict,
     }
+    
+
+def get_random_rotation_matrix_3d(interval_angle=90, rotation_axis=2):
+    # Generate a random rotation angle between 0 and 360 degrees
+    assert interval_angle > 0 and interval_angle <= 360, "interval_angle should be in (0, 360]"
+    assert 360 % interval_angle == 0, "interval_angle should be a divisor of 360"
+    
+    assert rotation_axis in [0, 1, 2, 3], "axis should be in [0, 1, 2, 3]"
+    
+    random_angle = np.random.randint(0, 360 // interval_angle, size=3) * interval_angle
+    
+    if rotation_axis == 0:
+        rot_matrix = rotation_matrix_x(random_angle[0])
+    elif rotation_axis == 1:
+        rot_matrix = rotation_matrix_y(random_angle[1])
+    elif rotation_axis == 2:
+        rot_matrix = rotation_matrix_z(random_angle[2])
+    elif rotation_axis == 3:
+        Rx = rotation_matrix_x(random_angle[0])
+        Ry = rotation_matrix_y(random_angle[1])
+        Rz = rotation_matrix_z(random_angle[2])
+        rot_matrix = Rx @ Ry @ Rz
+
+    return rot_matrix
+
+def augment_mesh(vertices, scale_min=0.9, scale_max=1.1, shift_strength=0.1, rotation_interval=90, rotation_axis=2, **kwargs):
+    # random rotation around z axis
+    Rotation_matrix = get_random_rotation_matrix_3d(interval_angle=rotation_interval, rotation_axis=rotation_axis)
+    vertices = vertices @ Rotation_matrix
+    
+    # random scale
+    scales = np.random.rand(3) * (scale_max - scale_min) + scale_min
+    vertices = vertices * scales
+    
+    # random shift
+    shift = (np.random.rand(3) * 2 - 1) * shift_strength
+    vertices = vertices + shift
+    
+    # clip vertices
+    vertices = np.clip(vertices, -0.999, 0.999)
+
+    return vertices
+
+    
+
+def process_mesh_seam(vertices, faces, seam_edges, augment=False, augment_dict=None):
+    """Process mesh vertices and faces."""
+
+    # Transpose so that z-axis is vertical.
+    
+    vertices, center, v_scale = normalize_vertices(vertices, scale=0.85)
+
+    vertices = vertices[:, [2, 0, 1]]
+
+    if augment:
+        vertices = augment_mesh(vertices, **augment_dict)
+
+    mesh_data = {
+        'vertices': vertices,
+        'faces': faces,
+        'lines': seam_edges,
+    }    
+    
+    mesh_data = remove_duplicate_vertices_and_lines_for_seam(mesh_data)
+
+    # Quantize and sort vertices, remove resulting duplicates, sort and reindex faces.
+    mesh_data = sort_vertices_and_update_indices(mesh_data)
+
+    mesh_data['v_scale'] = v_scale
+    mesh_data['v_offset'] = center
+    mesh_data['vertices'] = mesh_data['vertices'][:, [1, 2, 0]]
+
+    # Discard degenerate meshes without faces.
+    return mesh_data
